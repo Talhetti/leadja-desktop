@@ -98,7 +98,9 @@ async function handleApi(request, response, url, { database, scraper }) {
 function enrichLead(lead, settings) {
   const phone = normalizePhone(lead.phone, settings.countryCode);
   const message = buildMessage(lead, settings);
-  return { ...lead, message, whatsappUrl: phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : "" };
+  const mapsQuery = [lead.name, lead.address, lead.city].filter(Boolean).join(", ");
+  const googleMapsUrl = lead.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
+  return { ...lead, googleMapsUrl, message, whatsappUrl: phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : "" };
 }
 
 async function serveStatic(response, pathname) {

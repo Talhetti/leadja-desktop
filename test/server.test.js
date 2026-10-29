@@ -28,6 +28,8 @@ test("server can start on an ephemeral port", async () => {
     assert.equal(importResponse.status, 200);
     const importedDashboard = await (await fetch(`${runtime.url}/api/dashboard`)).json();
     assert.equal(importedDashboard.stats.total, 1);
+    assert.match(importedDashboard.leads[0].googleMapsUrl, /^https:\/\/www\.google\.com\/maps\/search\//);
+    assert.match(decodeURIComponent(importedDashboard.leads[0].googleMapsUrl), /Lead temporário/);
 
     const deleteResponse = await fetch(`${runtime.url}/api/leads/${importedDashboard.leads[0].id}`, { method: "DELETE" });
     assert.equal(deleteResponse.status, 200);
