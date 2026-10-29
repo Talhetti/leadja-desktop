@@ -1,7 +1,9 @@
+const stageOrder = ["new", "contacted", "qualified", "negotiating", "won"];
+
 const stageLabels = {
   new: "Novo",
-  qualified: "Qualificado",
   contacted: "Contatado",
+  qualified: "Qualificado",
   negotiating: "Negociação",
   won: "Fechado",
   lost: "Perdido",
@@ -93,7 +95,7 @@ function renderLeads() {
         </section>
         <aside class="rail">
           <section class="rail-section"><h2>Leitura rápida</h2><div class="finding"><strong>${stats.hot ? `${stats.hot} ${stats.hot === 1 ? "lead merece" : "leads merecem"} atenção agora` : "Sua próxima oportunidade aparecerá aqui"}</strong><p>${stats.hot ? "Comece pelos que têm telefone e não possuem site próprio." : "Busque um nicho e uma cidade ou importe um CSV."}</p></div></section>
-          <section class="rail-section"><h2>Funil local</h2><div class="panel rail-list">${Object.entries(stageLabels).slice(0, 5).map(([key, label]) => `<div class="rail-row"><span>${label}</span><strong>${stats.stages?.[key] || 0}</strong></div>`).join("")}</div></section>
+          <section class="rail-section"><h2>Funil local</h2><div class="panel rail-list">${stageOrder.map((key) => `<div class="rail-row"><span>${stageLabels[key]}</span><strong>${stats.stages?.[key] || 0}</strong></div>`).join("")}</div></section>
         </aside>
       </div>
       <input id="csvInput" type="file" accept=".csv,text/csv" hidden />
@@ -144,12 +146,11 @@ function renderSearch() {
 }
 
 function renderCrm() {
-  const stages = ["new", "qualified", "contacted", "negotiating", "won"];
   app.innerHTML = `
     <div class="page">
       ${pageHeading("CRM", "Arraste os leads entre as etapas ou abra um cartão para registrar a próxima ação.", `<button class="button primary" data-view="search">${icons.plus} Nova busca</button>`)}
       <section class="crm-board" aria-label="Funil de prospecção">
-        ${stages.map((stage) => {
+        ${stageOrder.map((stage) => {
           const leads = state.dashboard.leads.filter((lead) => lead.stage === stage);
           return `<div class="crm-column" data-stage="${stage}"><div class="crm-column-header"><h2>${stageLabels[stage]}</h2><span>${leads.length}</span></div>${leads.length ? leads.map(leadCard).join("") : `<div class="column-empty">Solte um lead aqui.</div>`}</div>`;
         }).join("")}

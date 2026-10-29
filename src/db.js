@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { defaultScoring, scoreLead } from "./scoring.js";
 
-const stages = new Set(["new", "qualified", "contacted", "negotiating", "won", "lost"]);
+const stages = new Set(["new", "contacted", "qualified", "negotiating", "won", "lost"]);
 
 export function createDatabase(path) {
   mkdirSync(dirname(path), { recursive: true });
