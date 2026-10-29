@@ -3,4 +3,8 @@
 .taste-skill/inspect/
 .taste-skill/final/
 *.log
+node_modules/
+out/
+resources/bin/google-maps-scraper
+resources/icon.iconset/
 

@@ -6,7 +6,7 @@ import { parseCsv, csvToLead } from "./csv.js";
 
 const image = "gosom/google-maps-scraper:latest";
 
-export function createScraper({ dataDir, database }) {
+export function createScraper({ dataDir, database, executablePath }) {
   const jobs = new Map();
 
   return {
@@ -32,18 +32,28 @@ export function createScraper({ dataDir, database }) {
     const jobDir = resolve(dataDir, "jobs", job.id);
     await mkdir(jobDir, { recursive: true });
     await writeFile(join(jobDir, "queries.txt"), `${job.query} em ${job.city}\n`, "utf8");
-    const args = [
-      "run", "--rm",
-      "-v", `${jobDir}:/data`,
-      image,
-      "-input", "/data/queries.txt",
-      "-results", "/data/results.csv",
+    const inputPath = join(jobDir, "queries.txt");
+    const resultsPath = join(jobDir, "results.csv");
+    const scraperArgs = [
+      "-input", inputPath,
+      "-results", resultsPath,
       "-depth", depthFor(job.limit),
       "-c", "2",
       "-exit-on-inactivity", "45s",
     ];
-    await runProcess("docker", args, job);
-    const csv = await readFile(join(jobDir, "results.csv"), "utf8");
+    if (executablePath) {
+      await runProcess(executablePath, scraperArgs, job, dataDir);
+    } else if (executablePath === undefined) {
+      const dockerArgs = [
+        "run", "--rm", "-v", `${jobDir}:/data`, image,
+        "-input", "/data/queries.txt", "-results", "/data/results.csv",
+        ...scraperArgs.slice(4),
+      ];
+      await runProcess("docker", dockerArgs, job, dataDir);
+    } else {
+      throw new Error("O motor local de busca não está incluído neste aplicativo.");
+    }
+    const csv = await readFile(resultsPath, "utf8");
     const records = parseCsv(csv).slice(0, job.limit);
     let imported = 0;
     for (const record of records) {
@@ -65,9 +75,13 @@ export function createScraper({ dataDir, database }) {
   }
 }
 
-function runProcess(command, args, job) {
+function runProcess(command, args, job, cwd) {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(command, args, {
+      cwd,
+      env: { ...process.env, DISABLE_TELEMETRY: "1" },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
     const push = (chunk) => {
       const lines = String(chunk).split(/\r?\n/).filter(Boolean);
       job.log.push(...lines);
@@ -90,7 +104,7 @@ function publicJob(job) {
 
 function friendlyError(error) {
   const message = String(error?.message || error || "Falha desconhecida");
-  if (message.includes("ENOENT")) return "Docker não foi encontrado. Abra o Docker Desktop e tente novamente.";
+  if (message.includes("ENOENT")) return "O motor local de busca não foi encontrado no aplicativo.";
   if (message.includes("Cannot connect") || message.includes("daemon")) return "O Docker Desktop não está ativo. Abra-o e tente novamente.";
   return message;
 }

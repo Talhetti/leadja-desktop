@@ -1,15 +1,31 @@
 {
   "name": "leadja-local",
+  "productName": "LeadJá",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "electron/main.js",
   "description": "Prospecção local com Google Maps, score por regras e CRM.",
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
+    "desktop": "electron .",
+    "build:icon": "./scripts/build-icon-macos.sh",
+    "build:scraper": "./scripts/build-scraper-macos.sh",
+    "package:mac": "electron-forge package --platform=darwin --arch=arm64",
+    "make:mac": "electron-forge make --platform=darwin --arch=arm64",
     "test": "node --test"
   },
   "engines": {
-    "node": ">=22.5"
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^8.0.1",
+    "@electron-forge/maker-dmg": "^8.0.1",
+    "electron": "^45.1.0"
+  },
+  "allowScripts": {
+    "fs-xattr@0.3.1": true,
+    "macos-alias@0.2.12": true
   }
 }

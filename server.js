@@ -9,11 +9,6 @@ import { createScraper } from "./src/scraper.js";
 
 const root = resolve(fileURLToPath(new URL(".", import.meta.url)));
 const publicDir = join(root, "public");
-const dataDir = join(root, ".leadja");
-const database = createDatabase(join(dataDir, "leadja.sqlite"));
-database.seedDemo();
-const scraper = createScraper({ dataDir, database });
-const port = Number(process.env.PORT || 4173);
 
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -23,22 +18,36 @@ const mime = {
   ".json": "application/json; charset=utf-8",
 };
 
-const server = createServer(async (request, response) => {
-  try {
-    const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
-    if (url.pathname.startsWith("/api/")) return await handleApi(request, response, url);
-    return await serveStatic(response, url.pathname);
-  } catch (error) {
-    console.error(error);
-    json(response, 500, { error: "Não foi possível concluir esta operação.", detail: error.message });
-  }
-});
+export async function startServer(options = {}) {
+  const dataDir = resolve(options.dataDir || join(root, ".leadja"));
+  const database = createDatabase(join(dataDir, "leadja.sqlite"));
+  database.seedDemo();
+  const scraper = createScraper({ dataDir, database, executablePath: options.scraperExecutable });
+  const requestedPort = Number(options.port ?? process.env.PORT ?? 4173);
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`LeadJá local em http://127.0.0.1:${port}`);
-});
+  const server = createServer(async (request, response) => {
+    try {
+      const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+      if (url.pathname.startsWith("/api/")) return await handleApi(request, response, url, { database, scraper });
+      return await serveStatic(response, url.pathname);
+    } catch (error) {
+      console.error(error);
+      json(response, 500, { error: "Não foi possível concluir esta operação.", detail: error.message });
+    }
+  });
 
-async function handleApi(request, response, url) {
+  await new Promise((resolvePromise, reject) => {
+    server.once("error", reject);
+    server.listen(requestedPort, "127.0.0.1", resolvePromise);
+  });
+  const address = server.address();
+  const port = typeof address === "object" && address ? address.port : requestedPort;
+  const url = `http://127.0.0.1:${port}`;
+  console.log(`LeadJá local em ${url}`);
+  return { server, url, database };
+}
+
+async function handleApi(request, response, url, { database, scraper }) {
   if (request.method === "GET" && url.pathname === "/api/health") return json(response, 200, { ok: true });
   if (request.method === "GET" && url.pathname === "/api/dashboard") {
     const settings = database.settings();
@@ -127,5 +136,13 @@ function json(response, status, value) {
 function text(response, status, value) {
   response.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   response.end(value);
+}
+
+const isCommandLine = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCommandLine) {
+  startServer().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
 }
 

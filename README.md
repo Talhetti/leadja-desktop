@@ -1,11 +1,11 @@
 # LeadJá local
 
-Aplicativo pessoal para buscar negócios no Google Maps, priorizar oportunidades com regras transparentes e acompanhar contatos em um CRM local. Não usa IA, não exige login e mantém os dados no computador.
+Aplicativo pessoal para macOS que busca negócios no Google Maps, prioriza oportunidades com regras transparentes e acompanha contatos em um CRM local. Não usa IA, não exige login, não depende de Docker na versão desktop e mantém os dados no computador.
 
 ## Requisitos
 
-- Node.js 22.5 ou mais recente
-- Docker Desktop ativo para executar novas buscas
+- Node.js 24 ou mais recente para desenvolvimento
+- macOS Apple Silicon para o aplicativo empacotado
 
 ## Executar
 
@@ -13,7 +13,26 @@ Aplicativo pessoal para buscar negócios no Google Maps, priorizar oportunidades
 npm start
 ```
 
-Abra `http://127.0.0.1:4173`. Na primeira busca, o Docker pode levar alguns minutos para baixar a imagem `gosom/google-maps-scraper`.
+Abra `http://127.0.0.1:4173`. Este comando mantém o modo navegador e usa Docker nas buscas, quando disponível.
+
+## Aplicativo macOS
+
+O GitHub Actions compila o coletor nativo ARM64 e gera o DMG sem depender do Docker. Execute o workflow **Build macOS ARM64** manualmente na aba Actions ou crie uma tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Execuções manuais disponibilizam o DMG em **Artifacts**. Tags `v*` também criam uma GitHub Release com o instalador anexado.
+
+Para executar o desktop em desenvolvimento, primeiro disponibilize o coletor em `resources/bin/google-maps-scraper` e rode:
+
+```bash
+npm run desktop
+```
+
+O script `npm run build:scraper` compila o coletor, mas requer Go 1.27.1 instalado.
 
 ## Testes
 
@@ -23,8 +42,8 @@ npm test
 
 ## Dados locais
 
-- Banco SQLite: `.leadja/leadja.sqlite`
-- Arquivos de cada busca: `.leadja/jobs/`
+- No modo navegador: `.leadja/`
+- No aplicativo: `~/Library/Application Support/LeadJá/data/`
 - Nenhum dado é enviado para um backend próprio ou serviço de IA.
 
 ## Fluxo
