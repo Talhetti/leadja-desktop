@@ -5,7 +5,7 @@ import { isAllowedWhatsAppUrl, toWhatsAppWebUrl } from "../electron/whatsapp.js"
 test("wa.me links open the same lead in WhatsApp Web", () => {
   assert.equal(
     toWhatsAppWebUrl("https://wa.me/5541987654321?text=Ol%C3%A1%2C%20Empresa"),
-    "https://web.whatsapp.com/send?phone=5541987654321&text=Ol%C3%A1%2C+Empresa",
+    "https://web.whatsapp.com/send/?phone=5541987654321&text=Ol%C3%A1%2C+Empresa&type=phone_number&app_absent=0",
   );
 });
 

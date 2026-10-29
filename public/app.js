@@ -188,6 +188,8 @@ function renderCrm() {
 }
 
 function renderWhatsApp() {
+  const pendingWhatsappUrl = state.pendingWhatsappUrl;
+  state.pendingWhatsappUrl = "";
   app.innerHTML = `
     <div class="page whatsapp-page">
       ${pageHeading("WhatsApp", "Converse pelo WhatsApp Web sem sair do LeadJá. A sessão fica vinculada somente a este Mac.", `<button class="button" id="reloadWhatsapp">Recarregar</button>`)}
@@ -204,8 +206,7 @@ function renderWhatsApp() {
   const host = document.querySelector("#whatsappHost");
   state.whatsappObserver = new ResizeObserver(() => syncWhatsAppBounds());
   state.whatsappObserver.observe(host);
-  requestAnimationFrame(() => showWhatsAppView(state.pendingWhatsappUrl));
-  state.pendingWhatsappUrl = "";
+  requestAnimationFrame(() => showWhatsAppView(pendingWhatsappUrl));
 }
 
 function whatsAppBounds() {
@@ -315,7 +316,9 @@ async function openLead(id) {
     toast("Mensagem copiada.");
   });
   document.querySelector("#openWhatsapp")?.addEventListener("click", () => {
-    state.pendingWhatsappUrl = lead.whatsappUrl;
+    const whatsappUrl = new URL(lead.whatsappUrl);
+    whatsappUrl.searchParams.set("text", document.querySelector("#drawerMessage").value.trim());
+    state.pendingWhatsappUrl = whatsappUrl.toString();
     state.view = "whatsapp";
     closeOverlays();
     render();

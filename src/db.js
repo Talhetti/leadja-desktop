@@ -1,13 +1,15 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { defaultScoring, scoreLead } from "./scoring.js";
 
 const stages = new Set(["new", "contacted", "qualified", "negotiating", "won", "lost"]);
 
 export function createDatabase(path) {
   mkdirSync(dirname(path), { recursive: true });
+  const databaseAlreadyExists = existsSync(path);
   const db = new DatabaseSync(path);
+  if (databaseAlreadyExists) createStartupBackup(db, path);
   db.exec(`
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS leads (
@@ -46,17 +48,6 @@ export function createDatabase(path) {
       finished_at TEXT
     );
   `);
-
-  const resetKey = "clean-slate:0.1.4";
-  const resetApplied = db.prepare("SELECT 1 FROM settings WHERE key = ?").get(resetKey);
-  if (!resetApplied) {
-    db.exec(`
-      DELETE FROM leads;
-      DELETE FROM searches;
-      DELETE FROM sqlite_sequence WHERE name = 'leads';
-    `);
-    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run(resetKey, JSON.stringify(true));
-  }
 
   const defaults = {
     senderName: "",
@@ -170,6 +161,18 @@ export function createDatabase(path) {
       }));
     },
   };
+}
+
+function createStartupBackup(db, databasePath) {
+  try {
+    const backupDirectory = join(dirname(databasePath), "backups");
+    mkdirSync(backupDirectory, { recursive: true });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const backupPath = join(backupDirectory, `leadja-startup-${timestamp}.sqlite`);
+    db.exec(`VACUUM INTO '${backupPath.replaceAll("'", "''")}'`);
+  } catch (error) {
+    console.error("Não foi possível criar o backup automático do LeadJá:", error);
+  }
 }
 
 function mapLead(row) {

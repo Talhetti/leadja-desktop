@@ -89,7 +89,7 @@ async function createWhatsAppView() {
   });
 
   webContents.setWindowOpenHandler(({ url }) => {
-    if (isAllowedWhatsAppUrl(url)) webContents.loadURL(url).catch(reportWhatsAppError);
+    if (isAllowedWhatsAppUrl(url)) webContents.loadURL(url).catch(handleWhatsAppLoadError);
     else if (/^https?:\/\//.test(url)) shell.openExternal(url);
     return { action: "deny" };
   });
@@ -157,6 +157,11 @@ function reportWhatsAppError(error) {
   sendWhatsAppStatus("error", "Não foi possível carregar o WhatsApp Web.");
 }
 
+function handleWhatsAppLoadError(error) {
+  if (error?.code === "ERR_ABORTED" || error?.errno === -3) return;
+  reportWhatsAppError(error);
+}
+
 function destroyWhatsAppView() {
   if (whatsappView && !whatsappView.webContents.isDestroyed()) {
     if (whatsappView.webContents.debugger.isAttached()) whatsappView.webContents.debugger.detach();
@@ -190,7 +195,7 @@ ipcMain.handle("whatsapp:show", async (_event, { bounds, chatUrl } = {}) => {
   const target = chatUrl ? toWhatsAppWebUrl(chatUrl) : "https://web.whatsapp.com/";
   if (chatUrl || !whatsappLoaded) {
     whatsappLoaded = true;
-    await view.webContents.loadURL(target).catch(reportWhatsAppError);
+    await view.webContents.loadURL(target).catch(handleWhatsAppLoadError);
   }
   return { ok: true };
 });
