@@ -21,7 +21,6 @@ const mime = {
 export async function startServer(options = {}) {
   const dataDir = resolve(options.dataDir || join(root, ".leadja"));
   const database = createDatabase(join(dataDir, "leadja.sqlite"));
-  database.seedDemo();
   const scraper = createScraper({ dataDir, database, executablePath: options.scraperExecutable });
   const requestedPort = Number(options.port ?? process.env.PORT ?? 4173);
 
@@ -66,6 +65,10 @@ async function handleApi(request, response, url, { database, scraper }) {
   if (request.method === "PATCH" && /^\/api\/leads\/\d+$/.test(url.pathname)) {
     const lead = database.updateLead(url.pathname.split("/").at(-1), await body(request));
     return lead ? json(response, 200, enrichLead(lead, database.settings())) : json(response, 404, { error: "Lead não encontrado." });
+  }
+  if (request.method === "DELETE" && /^\/api\/leads\/\d+$/.test(url.pathname)) {
+    const deleted = database.deleteLead(url.pathname.split("/").at(-1));
+    return deleted ? json(response, 200, { deleted: true }) : json(response, 404, { error: "Lead não encontrado." });
   }
   if (request.method === "POST" && url.pathname === "/api/leads/import") {
     const input = await body(request, 5_000_000);

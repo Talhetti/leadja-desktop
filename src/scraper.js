@@ -39,7 +39,7 @@ export function createScraper({ dataDir, database, executablePath }) {
       "-results", resultsPath,
       "-depth", depthFor(job.limit),
       "-c", "2",
-      "-exit-on-inactivity", "45s",
+      "-exit-on-inactivity", inactivityFor(job.limit),
     ];
     if (executablePath) {
       await runProcess(executablePath, scraperArgs, job, dataDir);
@@ -96,6 +96,12 @@ function runProcess(command, args, job, cwd) {
 
 function depthFor(limit) {
   return String(Math.max(1, Math.min(8, Math.ceil(limit / 20))));
+}
+
+function inactivityFor(limit) {
+  if (limit <= 10) return "15s";
+  if (limit <= 30) return "25s";
+  return "45s";
 }
 
 function publicJob(job) {

@@ -74,6 +74,8 @@ a { color: inherit; }
 .button.primary { border-color: var(--text); background: var(--text); color: #fff; }
 .button.primary:hover { background: #28342e; }
 .button.accent { border-color: var(--accent); background: var(--accent); color: #fff; }
+.button.danger { border-color: color-mix(in srgb, var(--negative) 35%, var(--control)); color: var(--negative); }
+.button.danger:hover { background: var(--pill-negative-bg); }
 .button.small { min-height: 30px; padding: 0 10px; font-size: 12px; }
 .button.text { min-height: 30px; padding: 0; border-color: transparent; background: transparent; color: var(--accent); }
 .button:disabled { cursor: not-allowed; opacity: .5; }
@@ -205,6 +207,8 @@ a { color: inherit; }
 .detail-grid dd { margin: 0; overflow-wrap: anywhere; }
 .drawer-section { margin-top: 24px; }
 .drawer-section h3 { margin: 0 0 9px; font-size: 14px; }
+.danger-zone { padding-top: 18px; border-top: 1px solid var(--rule); }
+.danger-zone p { margin: -3px 0 12px; color: var(--muted); font-size: 12px; }
 .drawer-actions { position: sticky; bottom: -22px; display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 24px -22px -22px; padding: 16px 22px; border-top: 1px solid var(--border); background: var(--surface); }
 
 .toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; max-width: min(420px, calc(100vw - 32px)); padding: 11px 15px; border-radius: var(--radius-control); background: var(--text); color: #fff; opacity: 0; pointer-events: none; transform: translate(-50%, 12px); transition: opacity .18s ease, transform .18s ease; }

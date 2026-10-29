@@ -47,6 +47,17 @@ export function createDatabase(path) {
     );
   `);
 
+  const resetKey = "clean-slate:0.1.4";
+  const resetApplied = db.prepare("SELECT 1 FROM settings WHERE key = ?").get(resetKey);
+  if (!resetApplied) {
+    db.exec(`
+      DELETE FROM leads;
+      DELETE FROM searches;
+      DELETE FROM sqlite_sequence WHERE name = 'leads';
+    `);
+    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run(resetKey, JSON.stringify(true));
+  }
+
   const defaults = {
     senderName: "",
     offer: "criação de sites e presença digital",
@@ -132,6 +143,9 @@ export function createDatabase(path) {
       db.prepare("UPDATE leads SET stage = ?, note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(stage, note, Number(id));
       return this.getLead(id);
     },
+    deleteLead(id) {
+      return db.prepare("DELETE FROM leads WHERE id = ?").run(Number(id)).changes > 0;
+    },
     stats() {
       const rows = db.prepare("SELECT stage, score, website, phone FROM leads").all();
       return {
@@ -154,20 +168,6 @@ export function createDatabase(path) {
         id: row.id, query: row.query, city: row.city, status: row.status, resultCount: row.result_count,
         error: row.error, createdAt: row.created_at, finishedAt: row.finished_at,
       }));
-    },
-    seedDemo() {
-      if (db.prepare("SELECT COUNT(*) count FROM leads").get().count > 0) return 0;
-      const demo = [
-        { name: "Padaria Estação 27", category: "Padaria", address: "Rua João Negrão, Curitiba - PR", city: "Curitiba", phone: "41987654321", rating: 4.7, reviewCount: 8, website: "" },
-        { name: "Clínica Sorriso Belo", category: "Clínica odontológica", address: "Av. Norte, Recife - PE", city: "Recife", phone: "81991234567", rating: 4.8, reviewCount: 12, website: "https://instagram.com/clinicasorrisobelo" },
-        { name: "Oficina Norte Sul", category: "Oficina mecânica", address: "Rua das Palmeiras, Goiânia - GO", city: "Goiânia", phone: "62988776655", rating: 3.8, reviewCount: 24, website: "" },
-        { name: "Salão Raiz", category: "Salão de beleza", address: "Rua Chile, Salvador - BA", city: "Salvador", phone: "71999887766", rating: 4.9, reviewCount: 6, website: "https://facebook.com/salaoraiz" },
-        { name: "Academia Horizonte", category: "Academia", address: "Av. Brasil, Campinas - SP", city: "Campinas", phone: "19981112222", rating: 4.4, reviewCount: 86, website: "https://academiahorizonte.com.br" },
-        { name: "Contabilidade Ponte", category: "Contabilidade", address: "Rua dos Andradas, Porto Alegre - RS", city: "Porto Alegre", phone: "51993334444", rating: 4.6, reviewCount: 4, website: "http://contabilidadeponte.com.br" },
-        { name: "Pet Shop Arca", category: "Pet shop", address: "Rua Paraíba, Belo Horizonte - MG", city: "Belo Horizonte", phone: "31995556666", rating: 4.5, reviewCount: 37, website: "" },
-      ];
-      demo.forEach((lead) => this.upsertLead(lead, "demo"));
-      return demo.length;
     },
   };
 }

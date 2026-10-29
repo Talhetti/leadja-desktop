@@ -226,6 +226,7 @@ async function openLead(id) {
     <section class="drawer-section"><h3>Etapa</h3><select class="select" id="drawerStage">${stageOptions(lead.stage)}</select></section>
     <section class="drawer-section"><h3>Mensagem sugerida</h3><textarea class="textarea" id="drawerMessage">${escapeHtml(lead.message)}</textarea><button class="button text" id="copyMessage">Copiar mensagem</button></section>
     <section class="drawer-section"><h3>Anotações</h3><textarea class="textarea" id="drawerNote" placeholder="Próxima ação, resposta ou contexto...">${escapeHtml(lead.note || "")}</textarea></section>
+    <section class="drawer-section danger-zone"><h3>Remover do CRM</h3><p>Esta ação exclui o lead da lista e do funil local.</p><button class="button danger" id="deleteLead">Excluir lead</button></section>
     <div class="drawer-actions">${lead.whatsappUrl ? `<a class="button accent" href="${lead.whatsappUrl}" target="_blank" rel="noreferrer">Abrir WhatsApp ${icons.arrow}</a>` : `<button class="button" disabled>Telefone indisponível</button>`}<button class="button primary" id="saveLead">Salvar</button></div>`;
   document.querySelector("#copyMessage").addEventListener("click", async () => {
     await navigator.clipboard.writeText(document.querySelector("#drawerMessage").value);
@@ -234,6 +235,14 @@ async function openLead(id) {
   document.querySelector("#saveLead").addEventListener("click", async () => {
     await updateLead(id, { stage: document.querySelector("#drawerStage").value, note: document.querySelector("#drawerNote").value });
     closeOverlays(); toast("Lead atualizado.");
+  });
+  document.querySelector("#deleteLead").addEventListener("click", async () => {
+    if (!window.confirm(`Excluir “${lead.name}” do CRM? Esta ação não pode ser desfeita.`)) return;
+    await api(`/api/leads/${id}`, { method: "DELETE" });
+    closeOverlays();
+    await refresh();
+    render();
+    toast("Lead excluído.");
   });
 }
 
@@ -248,7 +257,7 @@ async function startSearch(event) {
   const form = new FormData(event.currentTarget);
   const status = document.querySelector("#searchStatus");
   status.className = "search-status is-visible";
-  status.innerHTML = `<strong>Preparando o motor local</strong><span>Na primeira busca, o Docker pode baixar a imagem do scraper.</span><div class="progress-track"><i></i></div>`;
+  status.innerHTML = `<strong>Preparando o motor local</strong><span>O navegador local será aberto em segundo plano para consultar o Google Maps.</span><div class="progress-track"><i></i></div>`;
   try {
     const job = await api("/api/searches", { method: "POST", body: Object.fromEntries(form) });
     pollSearch(job.id);
