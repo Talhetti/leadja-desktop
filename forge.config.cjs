@@ -7,6 +7,10 @@ module.exports = {
     appBundleId: "br.com.talhetti.leadja",
     appCategoryType: "public.app-category.business",
     icon: path.join(__dirname, "resources", "icon"),
+    extendInfo: {
+      NSCameraUsageDescription: "O WhatsApp Web usa a câmera quando você inicia uma chamada ou captura uma imagem.",
+      NSMicrophoneUsageDescription: "O WhatsApp Web usa o microfone quando você grava uma mensagem de voz ou inicia uma chamada.",
+    },
     osxSign: {
       identity: "-",
       identityValidation: false,

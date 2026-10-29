@@ -232,6 +232,18 @@ a { color: inherit; }
 .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
 .column-empty { padding: 20px 8px; color: var(--muted); font-size: 12px; text-align: center; }
 
+.whatsapp-page { height: calc(100vh - 105px); display: flex; flex-direction: column; }
+.whatsapp-page .page-heading { flex: none; }
+.whatsapp-frame { min-height: 420px; flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--raised); }
+.whatsapp-toolbar { min-height: 42px; flex: none; display: flex; align-items: center; gap: 9px; padding: 0 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.whatsapp-toolbar strong { font-size: 13px; font-weight: 500; }
+.whatsapp-toolbar > span:last-child { margin-left: auto; color: var(--muted); font-size: 12px; }
+.whatsapp-toolbar [data-status="error"] { color: var(--negative); }
+.whatsapp-host { position: relative; min-height: 0; flex: 1; background: #f7f5f2; }
+.whatsapp-fallback { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; padding: 32px; text-align: center; }
+.whatsapp-fallback strong { font-size: 16px; }
+.whatsapp-fallback p { max-width: 430px; margin: 7px 0 16px; color: var(--muted); }
+
 .settings-list { max-width: 1120px; }
 .settings-section { display: grid; grid-template-columns: minmax(240px, 390px) minmax(0, 1fr); gap: 32px; padding: 32px 0; border-top: 1px solid var(--rule); }
 .settings-section:first-child { padding-top: 0; border-top: 0; }
@@ -283,6 +295,7 @@ a { color: inherit; }
   .workspace-grid, .search-layout { grid-template-columns: 1fr; }
   .rail { grid-template-columns: 1fr 1fr; }
   .crm-board { grid-template-columns: repeat(5, 240px); }
+  .whatsapp-page { height: calc(100vh - 93px); }
 }
 
 @media (max-width: 720px) {
@@ -315,6 +328,10 @@ a { color: inherit; }
   .settings-copy p { max-width: none; }
   .detail-drawer { padding: 18px; }
   .drawer-actions { bottom: -18px; margin: 24px -18px -18px; padding: 14px 18px; }
+  .whatsapp-page { height: calc(100vh - 95px); }
+  .whatsapp-page .page-heading p { display: none; }
+  .whatsapp-toolbar > span:last-child { display: none; }
+  .whatsapp-frame { min-height: 360px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

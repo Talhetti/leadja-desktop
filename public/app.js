@@ -13,6 +13,7 @@ const icons = {
   users: '<svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   search: '<svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
   columns: '<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="10" rx="1"/></svg>',
+  message: '<svg class="icon" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 9h8M8 13h5"/></svg>',
   settings: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.96 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3.04 14H3v-4h.08A1.7 1.7 0 0 0 4.6 8.96a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06a1.7 1.7 0 0 0 1.88.34A1.7 1.7 0 0 0 10 3.04V3h4v.08a1.7 1.7 0 0 0 1.04 1.52 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.13.37.5.95 1.56 1H21v4h-.08a1.7 1.7 0 0 0-1.52 1Z"/></svg>',
   menu: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
   plus: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -27,6 +28,9 @@ const state = {
   filters: { search: "", stage: "", minScore: 0 },
   activeLeadId: null,
   polling: null,
+  pendingWhatsappUrl: "",
+  whatsappObserver: null,
+  whatsappStatus: { status: "loading", message: "Conectando ao WhatsApp Web…" },
 };
 
 const app = document.querySelector("#app");
@@ -38,10 +42,23 @@ const sidebar = document.querySelector("#sidebar");
 document.querySelectorAll("[data-icon]").forEach((element) => { element.innerHTML = icons[element.dataset.icon] || ""; });
 document.addEventListener("click", handleClick);
 document.querySelector("#menuButton").addEventListener("click", () => {
+  const opening = !sidebar.classList.contains("is-open");
   sidebar.classList.toggle("is-open");
   scrim.hidden = !sidebar.classList.contains("is-open");
+  if (state.view === "whatsapp") {
+    if (opening) hideWhatsAppView();
+    else requestAnimationFrame(() => showWhatsAppView());
+  }
 });
 scrim.addEventListener("click", closeOverlays);
+
+window.leadjaWhatsapp?.onStatus(({ status, message }) => {
+  state.whatsappStatus = { status, message };
+  const label = document.querySelector("#whatsappStatus");
+  if (!label) return;
+  label.textContent = message;
+  label.dataset.status = status;
+});
 
 boot();
 
@@ -62,11 +79,13 @@ async function refresh() {
 }
 
 function render() {
+  if (state.view !== "whatsapp") hideWhatsAppView();
   document.querySelectorAll("[data-view]").forEach((button) => button.classList.toggle("is-active", button.dataset.view === state.view));
-  document.querySelector("#mobileTitle").textContent = ({ leads: "Leads", search: "Buscar", crm: "CRM", settings: "Configurações" })[state.view];
+  document.querySelector("#mobileTitle").textContent = ({ leads: "Leads", search: "Buscar", crm: "CRM", whatsapp: "WhatsApp", settings: "Configurações" })[state.view];
   if (state.view === "leads") renderLeads();
   if (state.view === "search") renderSearch();
   if (state.view === "crm") renderCrm();
+  if (state.view === "whatsapp") renderWhatsApp();
   if (state.view === "settings") renderSettings();
 }
 
@@ -168,6 +187,57 @@ function renderCrm() {
   });
 }
 
+function renderWhatsApp() {
+  app.innerHTML = `
+    <div class="page whatsapp-page">
+      ${pageHeading("WhatsApp", "Converse pelo WhatsApp Web sem sair do LeadJá. A sessão fica vinculada somente a este Mac.", `<button class="button" id="reloadWhatsapp">Recarregar</button>`)}
+      <section class="whatsapp-frame" aria-label="WhatsApp Web">
+        <div class="whatsapp-toolbar"><span class="status-dot"></span><strong id="whatsappStatus" data-status="${state.whatsappStatus.status}">${escapeHtml(state.whatsappStatus.message)}</strong><span>Site oficial em sessão isolada</span></div>
+        <div class="whatsapp-host" id="whatsappHost">
+          ${window.leadjaWhatsapp ? `<div class="whatsapp-fallback"><strong>Preparando o WhatsApp Web…</strong><p>Na primeira vez, você poderá vincular sua conta por QR Code.</p></div>` : `<div class="whatsapp-fallback"><strong>WhatsApp disponível no aplicativo para Mac</strong><p>Abra esta tela no LeadJá instalado para conectar sua conta por QR Code.</p><a class="button" href="https://web.whatsapp.com/" target="_blank" rel="noreferrer">Abrir no navegador</a></div>`}
+        </div>
+      </section>
+    </div>`;
+
+  document.querySelector("#reloadWhatsapp").addEventListener("click", () => window.leadjaWhatsapp?.reload());
+  state.whatsappObserver?.disconnect();
+  const host = document.querySelector("#whatsappHost");
+  state.whatsappObserver = new ResizeObserver(() => syncWhatsAppBounds());
+  state.whatsappObserver.observe(host);
+  requestAnimationFrame(() => showWhatsAppView(state.pendingWhatsappUrl));
+  state.pendingWhatsappUrl = "";
+}
+
+function whatsAppBounds() {
+  const host = document.querySelector("#whatsappHost");
+  if (!host) return null;
+  const bounds = host.getBoundingClientRect();
+  return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+}
+
+function showWhatsAppView(chatUrl = "") {
+  const bounds = whatsAppBounds();
+  if (!bounds || !window.leadjaWhatsapp) return;
+  window.leadjaWhatsapp.show(bounds, chatUrl).catch(() => setWhatsAppError());
+}
+
+function syncWhatsAppBounds() {
+  const bounds = whatsAppBounds();
+  if (bounds && window.leadjaWhatsapp) window.leadjaWhatsapp.setBounds(bounds).catch(() => setWhatsAppError());
+}
+
+function setWhatsAppError() {
+  state.whatsappStatus = { status: "error", message: "Não foi possível abrir o WhatsApp Web." };
+  const label = document.querySelector("#whatsappStatus");
+  if (label) { label.textContent = state.whatsappStatus.message; label.dataset.status = "error"; }
+}
+
+function hideWhatsAppView() {
+  state.whatsappObserver?.disconnect();
+  state.whatsappObserver = null;
+  window.leadjaWhatsapp?.hide();
+}
+
 function renderSettings() {
   const settings = state.dashboard.settings;
   const weights = settings.scoring || {};
@@ -239,10 +309,16 @@ async function openLead(id) {
     <section class="drawer-section"><h3>Mensagem sugerida</h3><textarea class="textarea" id="drawerMessage">${escapeHtml(lead.message)}</textarea><button class="button text" id="copyMessage">Copiar mensagem</button></section>
     <section class="drawer-section"><h3>Anotações</h3><textarea class="textarea" id="drawerNote" placeholder="Próxima ação, resposta ou contexto...">${escapeHtml(lead.note || "")}</textarea></section>
     <section class="drawer-section danger-zone"><h3>Remover do CRM</h3><p>Esta ação exclui o lead da lista e do funil local.</p><button class="button danger" id="deleteLead">Excluir lead</button></section>
-    <div class="drawer-actions">${lead.whatsappUrl ? `<a class="button accent" href="${lead.whatsappUrl}" target="_blank" rel="noreferrer">Abrir WhatsApp ${icons.arrow}</a>` : `<button class="button" disabled>Telefone indisponível</button>`}<button class="button primary" id="saveLead">Salvar</button></div>`;
+    <div class="drawer-actions">${lead.whatsappUrl ? `<button class="button accent" id="openWhatsapp">Conversar no WhatsApp ${icons.arrow}</button>` : `<button class="button" disabled>Telefone indisponível</button>`}<button class="button primary" id="saveLead">Salvar</button></div>`;
   document.querySelector("#copyMessage").addEventListener("click", async () => {
     await navigator.clipboard.writeText(document.querySelector("#drawerMessage").value);
     toast("Mensagem copiada.");
+  });
+  document.querySelector("#openWhatsapp")?.addEventListener("click", () => {
+    state.pendingWhatsappUrl = lead.whatsappUrl;
+    state.view = "whatsapp";
+    closeOverlays();
+    render();
   });
   document.querySelector("#saveLead").addEventListener("click", async () => {
     await updateLead(id, { stage: document.querySelector("#drawerStage").value, note: document.querySelector("#drawerNote").value });
@@ -345,6 +421,7 @@ function formatDate(value) { return value ? new Intl.DateTimeFormat("pt-BR", { d
 
 function closeOverlays() {
   drawer.hidden = true; drawer.innerHTML = ""; sidebar.classList.remove("is-open"); scrim.hidden = true; state.activeLeadId = null;
+  if (state.view === "whatsapp") requestAnimationFrame(() => showWhatsAppView());
 }
 
 async function api(path, options = {}) {
