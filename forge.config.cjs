@@ -10,6 +10,9 @@ module.exports = {
     osxSign: {
       identity: "-",
       identityValidation: false,
+      optionsForFile: () => ({
+        entitlements: path.join(__dirname, "resources", "entitlements.mac.plist"),
+      }),
     },
     asar: true,
     extraResource: [path.join(__dirname, "resources", "bin")],
