@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, WebContentsView } from "electron";
+import { app, BrowserWindow, ipcMain, ShareMenu, shell, WebContentsView } from "electron";
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join, resolve } from "node:path";
@@ -214,6 +214,18 @@ ipcMain.handle("whatsapp:hide", () => {
 ipcMain.handle("whatsapp:reload", async () => {
   if (!whatsappView || whatsappView.webContents.isDestroyed()) return { ok: false };
   whatsappView.webContents.reload();
+  return { ok: true };
+});
+
+ipcMain.handle("lead:share", (_event, value = {}) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false };
+  const text = String(value.text || "").trim().slice(0, 10_000);
+  const url = String(value.url || "");
+  if (!text) return { ok: false };
+  const sharingItem = { texts: [text] };
+  if (/^https:\/\//.test(url)) sharingItem.urls = [url];
+  const menu = new ShareMenu(sharingItem);
+  menu.popup({ window: mainWindow });
   return { ok: true };
 });
 

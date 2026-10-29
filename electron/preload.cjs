@@ -11,3 +11,7 @@ contextBridge.exposeInMainWorld("leadjaWhatsapp", {
     return () => ipcRenderer.removeListener("whatsapp:status", listener);
   },
 });
+
+contextBridge.exposeInMainWorld("leadjaShare", {
+  open: (value) => ipcRenderer.invoke("lead:share", value),
+});

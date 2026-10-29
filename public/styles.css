@@ -219,7 +219,7 @@ a { color: inherit; }
 .history-item span { margin-top: 2px; color: var(--muted); font-size: 12px; }
 
 .crm-board { display: grid; grid-template-columns: repeat(5, minmax(210px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 12px; }
-.crm-column { min-height: 460px; padding: 10px; border-radius: var(--radius-card); background: var(--raised); }
+.crm-column { min-height: 460px; padding: 10px; border-top: 3px solid var(--stage-color, var(--border)); border-radius: var(--radius-card); background: var(--raised); }
 .crm-column-header { display: flex; align-items: center; justify-content: space-between; min-height: 38px; padding: 0 4px 8px; }
 .crm-column-header h2 { margin: 0; font-size: 14px; }
 .crm-column-header span { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -231,6 +231,7 @@ a { color: inherit; }
 .lead-card span { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
 .column-empty { padding: 20px 8px; color: var(--muted); font-size: 12px; text-align: center; }
+.stage-dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--stage-color); }
 
 .whatsapp-page { height: calc(100vh - 105px); display: flex; flex-direction: column; }
 .whatsapp-page .page-heading { flex: none; }
@@ -253,7 +254,14 @@ a { color: inherit; }
 .weight-grid { display: grid; grid-template-columns: 1fr 92px; gap: 10px 16px; align-items: center; }
 .weight-grid label { color: var(--muted); }
 .weight-grid input { width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+.crm-stage-settings { display: grid; gap: 9px; }
+.crm-stage-setting { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.crm-color { width: 34px; height: 34px; padding: 3px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); cursor: pointer; }
+.crm-stage-order { display: flex; gap: 4px; }
+.crm-stage-order .icon-button { width: 34px; height: 34px; font-size: 16px; }
+.crm-stage-order .icon-button:disabled { opacity: .3; cursor: default; }
 
+/* taste-skill-ignore: the lead drawer is a floating overlay above its scrim. */
 .detail-drawer { position: fixed; z-index: 30; top: 0; right: 0; width: min(500px, 100vw); height: 100vh; padding: 22px; border-left: 1px solid var(--border); background: var(--surface); overflow-y: auto; box-shadow: -12px 0 32px var(--floating-shadow); }
 .drawer-scrim { position: fixed; z-index: 29; inset: 0; background: var(--scrim); }
 .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -270,6 +278,7 @@ a { color: inherit; }
 .detail-grid { display: grid; grid-template-columns: 115px 1fr; gap: 10px 16px; margin: 22px 0; }
 .detail-grid dt { color: var(--muted); }
 .detail-grid dd { margin: 0; overflow-wrap: anywhere; }
+.drawer-utility-actions { display: flex; margin-top: 16px; }
 .drawer-section { margin-top: 24px; }
 .drawer-section h3 { margin: 0 0 9px; font-size: 14px; }
 .danger-zone { padding-top: 18px; border-top: 1px solid var(--rule); }
@@ -287,6 +296,7 @@ a { color: inherit; }
 @media (max-width: 1100px) {
   .app-shell { display: block; padding-top: 48px; }
   .sidebar { position: fixed; z-index: 40; inset: 0 auto 0 0; width: min(300px, 88vw); min-height: 100vh; background: var(--ground); transform: translateX(-105%); transition: transform .2s ease; }
+  /* taste-skill-ignore: the mobile sidebar floats above the current screen. */
   .sidebar.is-open { transform: translateX(0); box-shadow: 12px 0 30px var(--floating-shadow); }
   .mobile-bar { position: fixed; z-index: 20; inset: 0 0 auto; height: 48px; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; padding: 0 12px; background: var(--ground); }
   .mobile-bar > strong, .mobile-bar > .icon-button:first-child { display: inline-grid; }

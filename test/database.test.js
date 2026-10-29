@@ -19,6 +19,12 @@ test("reopening the database preserves leads and creates a startup backup", asyn
     assert.equal(reopened.listLeads().length, 1);
     assert.equal(reopened.listLeads()[0].name, "Lead preservado");
     assert.equal(reopened.listSearches().length, 1);
+    const customizedStages = [
+      { key: "contacted", label: "Já falei", color: "#112233" },
+      { key: "new", label: "Entrada", color: "#445566" },
+    ];
+    reopened.saveSettings({ crmStages: customizedStages });
+    assert.deepEqual(reopened.settings().crmStages, customizedStages);
     reopened.raw.close();
 
     const backups = await readdir(join(dataDir, "backups"));

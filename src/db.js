@@ -4,6 +4,13 @@ import { dirname, join } from "node:path";
 import { defaultScoring, scoreLead } from "./scoring.js";
 
 const stages = new Set(["new", "contacted", "qualified", "negotiating", "won", "lost"]);
+const defaultCrmStages = [
+  { key: "new", label: "Novo", color: "#64748b" },
+  { key: "contacted", label: "Contatado", color: "#2563eb" },
+  { key: "qualified", label: "Qualificado", color: "#0e7490" },
+  { key: "negotiating", label: "Negociação", color: "#d97706" },
+  { key: "won", label: "Fechado", color: "#15803d" },
+];
 
 export function createDatabase(path) {
   mkdirSync(dirname(path), { recursive: true });
@@ -54,6 +61,7 @@ export function createDatabase(path) {
     offer: "criação de sites e presença digital",
     countryCode: "55",
     scoring: defaultScoring,
+    crmStages: defaultCrmStages,
   };
   const insertSetting = db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
   for (const [key, value] of Object.entries(defaults)) insertSetting.run(key, JSON.stringify(value));
@@ -67,7 +75,7 @@ export function createDatabase(path) {
     },
     saveSettings(input) {
       const save = db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
-      for (const key of ["senderName", "offer", "countryCode", "scoring"]) {
+      for (const key of ["senderName", "offer", "countryCode", "scoring", "crmStages"]) {
         if (input[key] !== undefined) save.run(key, JSON.stringify(input[key]));
       }
       return this.settings();

@@ -1,13 +1,10 @@
-const stageOrder = ["new", "contacted", "qualified", "negotiating", "won"];
-
-const stageLabels = {
-  new: "Novo",
-  contacted: "Contatado",
-  qualified: "Qualificado",
-  negotiating: "Negociação",
-  won: "Fechado",
-  lost: "Perdido",
-};
+const defaultCrmStages = [
+  { key: "new", label: "Novo", color: "#64748b" },
+  { key: "contacted", label: "Contatado", color: "#2563eb" },
+  { key: "qualified", label: "Qualificado", color: "#0e7490" },
+  { key: "negotiating", label: "Negociação", color: "#d97706" },
+  { key: "won", label: "Fechado", color: "#15803d" },
+];
 
 const icons = {
   users: '<svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
@@ -19,6 +16,7 @@ const icons = {
   plus: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   x: '<svg class="icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>',
   arrow: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  share: '<svg class="icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>',
   download: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></svg>',
 };
 
@@ -114,7 +112,7 @@ function renderLeads() {
         </section>
         <aside class="rail">
           <section class="rail-section"><h2>Leitura rápida</h2><div class="finding"><strong>${stats.hot ? `${stats.hot} ${stats.hot === 1 ? "lead merece" : "leads merecem"} atenção agora` : "Sua próxima oportunidade aparecerá aqui"}</strong><p>${stats.hot ? "Comece pelos que têm telefone e não possuem site próprio." : "Busque um nicho e uma cidade ou importe um CSV."}</p></div></section>
-          <section class="rail-section"><h2>Funil local</h2><div class="panel rail-list">${stageOrder.map((key) => `<div class="rail-row"><span>${stageLabels[key]}</span><strong>${stats.stages?.[key] || 0}</strong></div>`).join("")}</div></section>
+          <section class="rail-section"><h2>Funil local</h2><div class="panel rail-list">${crmStages().map(({ key, label, color }) => `<div class="rail-row"><span><i class="stage-dot" style="--stage-color:${color}"></i>${escapeHtml(label)}</span><strong>${stats.stages?.[key] || 0}</strong></div>`).join("")}</div></section>
         </aside>
       </div>
       <input id="csvInput" type="file" accept=".csv,text/csv" hidden />
@@ -165,13 +163,14 @@ function renderSearch() {
 }
 
 function renderCrm() {
+  const stages = crmStages();
   app.innerHTML = `
     <div class="page">
       ${pageHeading("CRM", "Arraste os leads entre as etapas ou abra um cartão para registrar a próxima ação.", `<button class="button primary" data-view="search">${icons.plus} Nova busca</button>`)}
       <section class="crm-board" aria-label="Funil de prospecção">
-        ${stageOrder.map((stage) => {
-          const leads = state.dashboard.leads.filter((lead) => lead.stage === stage);
-          return `<div class="crm-column" data-stage="${stage}"><div class="crm-column-header"><h2>${stageLabels[stage]}</h2><span>${leads.length}</span></div>${leads.length ? leads.map(leadCard).join("") : `<div class="column-empty">Solte um lead aqui.</div>`}</div>`;
+        ${stages.map(({ key, label, color }) => {
+          const leads = state.dashboard.leads.filter((lead) => lead.stage === key);
+          return `<div class="crm-column" data-stage="${key}" style="--stage-color:${color}"><div class="crm-column-header"><h2>${escapeHtml(label)}</h2><span>${leads.length}</span></div>${leads.length ? leads.map(leadCard).join("") : `<div class="column-empty">Solte um lead aqui.</div>`}</div>`;
         }).join("")}
       </section>
     </div>`;
@@ -243,6 +242,7 @@ function renderSettings() {
   const settings = state.dashboard.settings;
   const weights = settings.scoring || {};
   const theme = document.documentElement.dataset.theme || "light";
+  const stages = crmStages();
   app.innerHTML = `
     <div class="page settings-list">
       ${pageHeading("Configurações", "Ajuste a oferta, a mensagem e o que torna uma oportunidade importante para você.", "")}
@@ -251,6 +251,14 @@ function renderSettings() {
           <div class="settings-copy"><h2>Aparência</h2><p>Escolha o tema mais confortável para trabalhar. A preferência fica salva neste computador.</p></div>
           <div class="settings-panel">
             <label class="field-label">Tema<select class="select" id="themeSelect" name="theme"><option value="light" ${theme === "light" ? "selected" : ""}>Claro</option><option value="dark" ${theme === "dark" ? "selected" : ""}>Escuro</option></select></label>
+          </div>
+        </section>
+        <section class="settings-section">
+          <div class="settings-copy"><h2>Etapas do CRM</h2><p>Renomeie, escolha as cores e mude a ordem das colunas. Os leads permanecem vinculados às etapas internas.</p></div>
+          <div class="settings-panel">
+            <div class="crm-stage-settings" id="crmStageSettings">
+              ${stages.map((stage, index) => crmStageSetting(stage, index, stages.length)).join("")}
+            </div>
           </div>
         </section>
         <section class="settings-section">
@@ -277,6 +285,7 @@ function renderSettings() {
       </form>
     </div>`;
   document.querySelector("#settingsForm").addEventListener("submit", saveSettings);
+  document.querySelector("#crmStageSettings").addEventListener("click", moveCrmStage);
   document.querySelector("#themeSelect").addEventListener("change", (event) => {
     setTheme(event.target.value);
     toast(`Tema ${event.target.value === "dark" ? "escuro" : "claro"} aplicado.`);
@@ -306,6 +315,7 @@ async function openLead(id) {
     <div class="drawer-score"><strong class="num">${lead.score}</strong><span>de 100 no score de oportunidade</span></div>
     <div class="receipt">${lead.scoreReasons.length ? lead.scoreReasons.map((reason) => `<div class="receipt-row"><span>${escapeHtml(reason.label)}</span><strong>+${reason.value}</strong></div>`).join("") : `<div class="receipt-row"><span>Nenhum sinal configurado</span><strong>0</strong></div>`}</div>
     <dl class="detail-grid"><dt>Telefone</dt><dd>${escapeHtml(lead.phone || "—")}</dd><dt>Site</dt><dd>${lead.website ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noreferrer">${escapeHtml(lead.website)}</a>` : "—"}</dd><dt>Avaliações</dt><dd>${lead.rating ? `${lead.rating.toFixed(1)} com ${lead.reviewCount} avaliações` : `${lead.reviewCount} avaliações`}</dd><dt>Endereço</dt><dd>${escapeHtml(lead.address || "—")}</dd><dt>Google Maps</dt><dd><a href="${escapeAttr(lead.googleMapsUrl)}" target="_blank" rel="noreferrer">Abrir no Google Maps ↗</a></dd></dl>
+    <div class="drawer-utility-actions"><button class="button" id="shareLead">${icons.share} Compartilhar lead</button></div>
     <section class="drawer-section"><h3>Etapa</h3><select class="select" id="drawerStage">${stageOptions(lead.stage)}</select></section>
     <section class="drawer-section"><h3>Mensagem sugerida</h3><textarea class="textarea" id="drawerMessage">${escapeHtml(lead.message)}</textarea><button class="button text" id="copyMessage">Copiar mensagem</button></section>
     <section class="drawer-section"><h3>Anotações</h3><textarea class="textarea" id="drawerNote" placeholder="Próxima ação, resposta ou contexto...">${escapeHtml(lead.note || "")}</textarea></section>
@@ -314,6 +324,11 @@ async function openLead(id) {
   document.querySelector("#copyMessage").addEventListener("click", async () => {
     await navigator.clipboard.writeText(document.querySelector("#drawerMessage").value);
     toast("Mensagem copiada.");
+  });
+  document.querySelector("#shareLead").addEventListener("click", async () => {
+    const text = leadShareText(lead);
+    if (window.leadjaShare) await window.leadjaShare.open({ text, url: lead.googleMapsUrl });
+    else { await navigator.clipboard.writeText(text); toast("Dados do lead copiados."); }
   });
   document.querySelector("#openWhatsapp")?.addEventListener("click", () => {
     const whatsappUrl = new URL(lead.whatsappUrl);
@@ -392,12 +407,37 @@ async function saveSettings(event) {
   const data = new FormData(event.currentTarget);
   const scoring = {};
   for (const [key, value] of data.entries()) if (key.startsWith("score.")) scoring[key.slice(6)] = Number(value);
-  await api("/api/settings", { method: "PUT", body: { senderName: data.get("senderName"), offer: data.get("offer"), countryCode: data.get("countryCode"), scoring } });
+  const stageKeys = data.getAll("crm.key");
+  const stageLabels = data.getAll("crm.label");
+  const stageColors = data.getAll("crm.color");
+  const crmStages = stageKeys.map((key, index) => ({
+    key,
+    label: String(stageLabels[index] || "").trim() || defaultCrmStages.find((stage) => stage.key === key)?.label || key,
+    color: normalizeStageColor(stageColors[index], defaultCrmStages.find((stage) => stage.key === key)?.color),
+  }));
+  await api("/api/settings", { method: "PUT", body: { senderName: data.get("senderName"), offer: data.get("offer"), countryCode: data.get("countryCode"), scoring, crmStages } });
   await refresh(); renderSettings(); toast("Configurações salvas.");
 }
 
+function moveCrmStage(event) {
+  const button = event.target.closest("[data-stage-move]");
+  if (!button) return;
+  const row = button.closest(".crm-stage-setting");
+  if (button.dataset.stageMove === "up" && row.previousElementSibling) row.parentElement.insertBefore(row, row.previousElementSibling);
+  if (button.dataset.stageMove === "down" && row.nextElementSibling) row.parentElement.insertBefore(row.nextElementSibling, row);
+  updateCrmStageButtons();
+}
+
+function updateCrmStageButtons() {
+  const rows = [...document.querySelectorAll(".crm-stage-setting")];
+  rows.forEach((row, index) => {
+    row.querySelector('[data-stage-move="up"]').disabled = index === 0;
+    row.querySelector('[data-stage-move="down"]').disabled = index === rows.length - 1;
+  });
+}
+
 function leadTable(leads) {
-  return `<table class="lead-table"><thead><tr><th class="identity">Empresa</th><th class="location">Localização</th><th class="num reviews">Avaliações</th><th class="status-col">Etapa</th><th class="num score-col">Score</th><th class="action-col"></th></tr></thead><tbody>${leads.map((lead) => `<tr data-lead-id="${lead.id}"><td class="identity"><span class="lead-name">${escapeHtml(lead.name)}</span><span class="lead-subline">${escapeHtml(lead.category || "Categoria não informada")}${lead.website ? " · com site" : " · sem site"}</span></td><td class="location">${escapeHtml(lead.city || lead.address || "—")}</td><td class="num reviews">${lead.rating ? lead.rating.toFixed(1) : "—"} <span class="lead-subline">${lead.reviewCount} avaliações</span></td><td class="status-col"><span class="pill ${lead.stage}">${stageLabels[lead.stage]}</span></td><td class="num score-col"><span class="score ${scoreClass(lead.score)}">${lead.score}</span></td><td class="action-col">${icons.arrow}</td></tr>`).join("")}</tbody></table>`;
+  return `<table class="lead-table"><thead><tr><th class="identity">Empresa</th><th class="location">Localização</th><th class="num reviews">Avaliações</th><th class="status-col">Etapa</th><th class="num score-col">Score</th><th class="action-col"></th></tr></thead><tbody>${leads.map((lead) => `<tr data-lead-id="${lead.id}"><td class="identity"><span class="lead-name">${escapeHtml(lead.name)}</span><span class="lead-subline">${escapeHtml(lead.category || "Categoria não informada")}${lead.website ? " · com site" : " · sem site"}</span></td><td class="location">${escapeHtml(lead.city || lead.address || "—")}</td><td class="num reviews">${lead.rating ? lead.rating.toFixed(1) : "—"} <span class="lead-subline">${lead.reviewCount} avaliações</span></td><td class="status-col"><span class="pill" style="${stagePillStyle(lead.stage)}">${escapeHtml(stageLabel(lead.stage))}</span></td><td class="num score-col"><span class="score ${scoreClass(lead.score)}">${lead.score}</span></td><td class="action-col">${icons.arrow}</td></tr>`).join("")}</tbody></table>`;
 }
 
 function leadCard(lead) {
@@ -417,7 +457,26 @@ function kpi(label, value, caption) { return `<div class="kpi"><span>${label}</s
 function hotFinding(stats) { return stats.hot ? `${stats.hot} ${stats.hot === 1 ? "oportunidade está" : "oportunidades estão"} pronta para contato; a lista já começa pelas mais fortes.` : "Seus leads ficam ordenados pelos sinais que mais importam para a sua oferta."; }
 function emptyState(title, copy) { return `<div class="empty-state"><div><strong>${title}</strong><p>${copy}</p><button class="button primary" data-view="search">Fazer uma busca</button></div></div>`; }
 function errorBlock(title, copy) { return `<div class="empty-state"><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(copy)}</p><button class="button" onclick="location.reload()">Tentar novamente</button></div></div>`; }
-function stageOptions(selected) { return Object.entries(stageLabels).map(([value, label]) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`).join(""); }
+function crmStages() {
+  const saved = Array.isArray(state.dashboard.settings?.crmStages) ? state.dashboard.settings.crmStages : [];
+  const defaults = new Map(defaultCrmStages.map((stage) => [stage.key, stage]));
+  const ordered = [];
+  for (const value of saved) {
+    if (!defaults.has(value?.key) || ordered.some((stage) => stage.key === value.key)) continue;
+    const fallback = defaults.get(value.key);
+    ordered.push({ key: value.key, label: String(value.label || fallback.label).trim().slice(0, 40) || fallback.label, color: normalizeStageColor(value.color, fallback.color) });
+  }
+  for (const stage of defaultCrmStages) if (!ordered.some((value) => value.key === stage.key)) ordered.push({ ...stage });
+  return ordered;
+}
+
+function stageLabel(key) { return crmStages().find((stage) => stage.key === key)?.label || (key === "lost" ? "Perdido" : key); }
+function stageColor(key) { return crmStages().find((stage) => stage.key === key)?.color || "#64748b"; }
+function stagePillStyle(key) { const color = stageColor(key); return `color:${color};border-color:${color}55;background:${color}14`; }
+function normalizeStageColor(value, fallback = "#64748b") { return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value) : fallback; }
+function stageOptions(selected) { return [...crmStages(), { key: "lost", label: "Perdido", color: "#b91c1c" }].map(({ key, label }) => `<option value="${key}" ${selected === key ? "selected" : ""}>${escapeHtml(label)}</option>`).join(""); }
+function crmStageSetting(stage, index, total) { return `<div class="crm-stage-setting"><input type="hidden" name="crm.key" value="${stage.key}"/><input class="crm-color" type="color" name="crm.color" value="${stage.color}" aria-label="Cor de ${escapeAttr(stage.label)}"/><input class="field" name="crm.label" value="${escapeAttr(stage.label)}" maxlength="40" aria-label="Nome da etapa ${escapeAttr(stage.label)}"/><div class="crm-stage-order"><button class="icon-button" type="button" data-stage-move="up" aria-label="Mover ${escapeAttr(stage.label)} para cima" ${index === 0 ? "disabled" : ""}>↑</button><button class="icon-button" type="button" data-stage-move="down" aria-label="Mover ${escapeAttr(stage.label)} para baixo" ${index === total - 1 ? "disabled" : ""}>↓</button></div></div>`; }
+function leadShareText(lead) { return [lead.name, [lead.category, lead.city].filter(Boolean).join(" · "), lead.phone ? `Telefone: ${lead.phone}` : "", lead.website ? `Site: ${lead.website}` : "", lead.googleMapsUrl ? `Google Maps: ${lead.googleMapsUrl}` : "", `Etapa: ${stageLabel(lead.stage)}`, `Score: ${lead.score}/100`].filter(Boolean).join("\n"); }
 function weightField(key, label, weights) { return `<label for="score-${key}">${label}</label><input class="field num" id="score-${key}" name="score.${key}" type="number" min="0" max="100" value="${Number(weights[key] || 0)}" />`; }
 function scoreClass(score) { return score >= 70 ? "hot" : score >= 50 ? "warm" : "low"; }
 function formatDate(value) { return value ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(`${value.replace(" ", "T")}Z`)) : "—"; }
