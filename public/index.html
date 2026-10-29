@@ -4,15 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#edf5f1" />
+    <script>
+      try {
+        const theme = localStorage.getItem("leadja-theme") === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#0b0e0d" : "#edf5f1";
+      } catch { document.documentElement.dataset.theme = "light"; }
+    </script>
     <title>LeadJá local</title>
     <meta name="description" content="Busca local de leads, score por regras e CRM de prospecção." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="app-shell" data-ui>
+    <div class="app-shell">
       <aside class="sidebar" id="sidebar">
         <div class="brand" aria-label="LeadJá local">
           <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 8.5h11.5a6.5 6.5 0 0 1 0 13H13l-6 4v-17Z"/><path d="m20 11 5 5-5 5M24.5 16H15"/></svg>

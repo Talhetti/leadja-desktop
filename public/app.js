@@ -171,10 +171,17 @@ function renderCrm() {
 function renderSettings() {
   const settings = state.dashboard.settings;
   const weights = settings.scoring || {};
+  const theme = document.documentElement.dataset.theme || "light";
   app.innerHTML = `
     <div class="page settings-list">
       ${pageHeading("Configurações", "Ajuste a oferta, a mensagem e o que torna uma oportunidade importante para você.", "")}
       <form id="settingsForm">
+        <section class="settings-section">
+          <div class="settings-copy"><h2>Aparência</h2><p>Escolha o tema mais confortável para trabalhar. A preferência fica salva neste computador.</p></div>
+          <div class="settings-panel">
+            <label class="field-label">Tema<select class="select" id="themeSelect" name="theme"><option value="light" ${theme === "light" ? "selected" : ""}>Claro</option><option value="dark" ${theme === "dark" ? "selected" : ""}>Escuro</option></select></label>
+          </div>
+        </section>
         <section class="settings-section">
           <div class="settings-copy"><h2>Sua abordagem</h2><p>Esses dados entram nas mensagens. Nada é enviado automaticamente.</p></div>
           <div class="settings-panel">
@@ -199,6 +206,10 @@ function renderSettings() {
       </form>
     </div>`;
   document.querySelector("#settingsForm").addEventListener("submit", saveSettings);
+  document.querySelector("#themeSelect").addEventListener("change", (event) => {
+    setTheme(event.target.value);
+    toast(`Tema ${event.target.value === "dark" ? "escuro" : "claro"} aplicado.`);
+  });
 }
 
 async function handleClick(event) {
@@ -350,6 +361,13 @@ async function api(path, options = {}) {
 function toast(message) {
   toastEl.textContent = message; toastEl.classList.add("is-visible");
   clearTimeout(toast.timer); toast.timer = setTimeout(() => toastEl.classList.remove("is-visible"), 2600);
+}
+
+function setTheme(value) {
+  const theme = value === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem("leadja-theme", theme);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#0b0e0d" : "#edf5f1");
 }
 
 function debounce(fn, delay) {
