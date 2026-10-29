@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#edf5f1" />
+    <title>LeadJá local</title>
+    <meta name="description" content="Busca local de leads, score por regras e CRM de prospecção." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell" data-ui>
+      <aside class="sidebar" id="sidebar">
+        <div class="brand" aria-label="LeadJá local">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 8.5h11.5a6.5 6.5 0 0 1 0 13H13l-6 4v-17Z"/><path d="m20 11 5 5-5 5M24.5 16H15"/></svg>
+          <div><strong>LeadJá</strong><span>workspace local</span></div>
+        </div>
+        <nav class="main-nav" aria-label="Principal">
+          <button class="nav-item is-active" data-view="leads"><span data-icon="users"></span>Leads <b id="navLeadCount">0</b></button>
+          <button class="nav-item" data-view="search"><span data-icon="search"></span>Buscar</button>
+          <button class="nav-item" data-view="crm"><span data-icon="columns"></span>CRM</button>
+          <button class="nav-item" data-view="settings"><span data-icon="settings"></span>Configurações</button>
+        </nav>
+        <div class="sidebar-note">
+          <span class="status-dot"></span>
+          <div><strong>Somente neste computador</strong><span>Seus dados ficam no SQLite local.</span></div>
+        </div>
+      </aside>
+
+      <header class="mobile-bar">
+        <button class="icon-button" id="menuButton" aria-label="Abrir menu"><span data-icon="menu"></span></button>
+        <strong id="mobileTitle">Leads</strong>
+        <button class="icon-button" data-view="search" aria-label="Nova busca"><span data-icon="plus"></span></button>
+      </header>
+
+      <main class="sheet" id="app">
+        <div class="loading-screen"><span class="loading-bar title"></span><span class="loading-bar wide"></span><span class="loading-bar block"></span></div>
+      </main>
+    </div>
+    <div class="drawer-scrim" id="drawerScrim" hidden></div>
+    <aside class="detail-drawer" id="detailDrawer" aria-label="Detalhes do lead" hidden></aside>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
+

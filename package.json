@@ -1,0 +1,15 @@
+{
+  "name": "leadja-local",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prospecção local com Google Maps, score por regras e CRM.",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}
