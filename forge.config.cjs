@@ -7,6 +7,10 @@ module.exports = {
     appBundleId: "br.com.talhetti.leadja",
     appCategoryType: "public.app-category.business",
     icon: path.join(__dirname, "resources", "icon"),
+    osxSign: {
+      identity: "-",
+      identityValidation: false,
+    },
     asar: true,
     extraResource: [path.join(__dirname, "resources", "bin")],
     ignore: [
