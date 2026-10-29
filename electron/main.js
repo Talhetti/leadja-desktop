@@ -11,6 +11,11 @@ let mainWindow;
 let localServer;
 let whatsappView;
 let whatsappLoaded = false;
+let whatsappViewReady;
+
+const whatsappChromeMajor = String(Math.min(Number.parseInt(process.versions.chrome, 10) || 140, 140));
+const whatsappChromeVersion = `${whatsappChromeMajor}.0.0.0`;
+const whatsappUserAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${whatsappChromeVersion} Safari/537.36`;
 
 app.setName("LeadJá");
 app.commandLine.appendSwitch("lang", "pt-BR");
@@ -53,8 +58,11 @@ async function createWindow() {
   await mainWindow.loadURL(localServer.url);
 }
 
-function createWhatsAppView() {
-  if (whatsappView && !whatsappView.webContents.isDestroyed()) return whatsappView;
+async function createWhatsAppView() {
+  if (whatsappView && !whatsappView.webContents.isDestroyed()) {
+    await whatsappViewReady;
+    return whatsappView;
+  }
 
   whatsappView = new WebContentsView({
     webPreferences: {
@@ -68,7 +76,7 @@ function createWhatsAppView() {
   whatsappView.setBackgroundColor("#ffffff");
 
   const { webContents } = whatsappView;
-  webContents.setUserAgent(`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${process.versions.chrome} Safari/537.36`);
+  webContents.setUserAgent(whatsappUserAgent);
   webContents.setZoomFactor(0.85);
   const whatsappSession = webContents.session;
   const permissionAllowed = (permission, origin) => {
@@ -92,6 +100,7 @@ function createWhatsAppView() {
   });
   webContents.on("did-start-loading", () => sendWhatsAppStatus("loading", "Carregando WhatsApp Web…"));
   webContents.on("did-finish-load", () => {
+    if (webContents.getURL() === "about:blank") return;
     if (/4xx|error/i.test(webContents.getTitle())) reportWhatsAppError(new Error(webContents.getTitle()));
     else sendWhatsAppStatus("ready", "WhatsApp Web pronto");
   });
@@ -102,7 +111,41 @@ function createWhatsAppView() {
 
   mainWindow.contentView.addChildView(whatsappView);
   whatsappView.setVisible(false);
+  whatsappViewReady = configureWhatsAppBrowserIdentity(webContents).catch((error) => {
+    console.error("WhatsApp browser identity:", error);
+  });
+  await whatsappViewReady;
   return whatsappView;
+}
+
+async function configureWhatsAppBrowserIdentity(webContents) {
+  await webContents.loadURL("about:blank");
+  webContents.debugger.attach("1.3");
+  await webContents.debugger.sendCommand("Network.enable");
+  await webContents.debugger.sendCommand("Network.setUserAgentOverride", {
+    userAgent: whatsappUserAgent,
+    acceptLanguage: "pt-BR,pt;q=0.9,en;q=0.8",
+    platform: "MacIntel",
+    userAgentMetadata: {
+      brands: [
+        { brand: "Not_A Brand", version: "99" },
+        { brand: "Chromium", version: whatsappChromeMajor },
+        { brand: "Google Chrome", version: whatsappChromeMajor },
+      ],
+      fullVersionList: [
+        { brand: "Not_A Brand", version: "99.0.0.0" },
+        { brand: "Chromium", version: whatsappChromeVersion },
+        { brand: "Google Chrome", version: whatsappChromeVersion },
+      ],
+      platform: "macOS",
+      platformVersion: "15.0.0",
+      architecture: process.arch === "arm64" ? "arm" : "x86",
+      model: "",
+      mobile: false,
+      bitness: "64",
+      wow64: false,
+    },
+  });
 }
 
 function sendWhatsAppStatus(status, message) {
@@ -115,9 +158,13 @@ function reportWhatsAppError(error) {
 }
 
 function destroyWhatsAppView() {
-  if (whatsappView && !whatsappView.webContents.isDestroyed()) whatsappView.webContents.close();
+  if (whatsappView && !whatsappView.webContents.isDestroyed()) {
+    if (whatsappView.webContents.debugger.isAttached()) whatsappView.webContents.debugger.detach();
+    whatsappView.webContents.close();
+  }
   whatsappView = null;
   whatsappLoaded = false;
+  whatsappViewReady = null;
 }
 
 function safeViewBounds(value) {
@@ -136,7 +183,7 @@ function safeViewBounds(value) {
 
 ipcMain.handle("whatsapp:show", async (_event, { bounds, chatUrl } = {}) => {
   if (!mainWindow || mainWindow.isDestroyed()) return { ok: false };
-  const view = createWhatsAppView();
+  const view = await createWhatsAppView();
   view.setBounds(safeViewBounds(bounds));
   view.setVisible(true);
 
